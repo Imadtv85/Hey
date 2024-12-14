@@ -1,0 +1,33 @@
+name: Facebook Live Streaming
+
+on:
+  push:
+    branches:
+      - main  # أو الفرع الذي ترغب في تشغيل الـ Action عليه
+  workflow_dispatch:  # يمكنك تشغيل هذا العمل يدويًا أيضًا
+
+jobs:
+  facebook-live:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. إعداد البيئة وتثبيت FFmpeg
+    - name: Set up FFmpeg
+      run: |
+        sudo apt update && sudo apt install -y ffmpeg
+
+    # 2. إعداد متغيرات البث
+    - name: Set Stream Key and m3u8 URL
+      run: |
+        echo "STREAM_KEY=FB-122129781716499805-0-AbxF-Yd4NUxdhJFQ" >> $GITHUB_ENV
+        echo "M3U8_URL=http://mo3ad.xyz/GpfGbMNfzW/XJFgkQnpXd/10" >> $GITHUB_ENV
+
+    # 3. تشغيل FFmpeg للبث إلى فيسبوك
+    - name: Start Facebook Live Stream
+      run: |
+        ffmpeg -re -i "$M3U8_URL" -c:v libx264 -preset veryfast -b:v 2500k -c:a aac -strict experimental -f flv "rtmps://live-api-s.facebook.com:443/rtmp/$STREAM_KEY" 2>&1 | tee ffmpeg_log.txt
+
+    # 4. عرض مخرجات السجل لمعرفة ما إذا كان البث قد تم بنجاح
+    - name: Display FFmpeg Log
+      run: |
+        cat ffmpeg_log.txt
